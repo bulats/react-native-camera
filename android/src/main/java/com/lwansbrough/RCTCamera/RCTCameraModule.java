@@ -6,7 +6,6 @@
 package com.lwansbrough.RCTCamera;
 
 import android.content.ContentValues;
-import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.media.*;
 import android.net.Uri;
@@ -28,6 +27,7 @@ import com.facebook.react.bridge.WritableNativeMap;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -83,11 +83,18 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     private ReadableMap mRecordingOptions;
     private Boolean mSafeToCapture = true;
 
+    private int mCurrentChunkIndex = 0;
+    private ArrayList<String> mUsedFiles = new ArrayList<>();
+//    private File mNextFile;
+
     public RCTCameraModule(ReactApplicationContext reactContext) {
         super(reactContext);
         _reactContext = reactContext;
         _sensorOrientationChecker = new RCTSensorOrientationChecker(_reactContext);
         _reactContext.addLifecycleEventListener(this);
+
+
+
     }
 
     public static ReactApplicationContext getReactContextSingleton() {
@@ -104,13 +111,30 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
      * @param what Type of info we have received.
      * @param extra Extra code, specific to the info type.
      */
+    @Override
     public void onInfo(MediaRecorder mr, int what, int extra) {
-        if ( what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED ||
-                what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
-            if (mRecordingPromise != null) {
-                releaseMediaRecorder(); // release the MediaRecorder object and resolve promise
-            }
+
+        switch (what) {
+            case MediaRecorder.MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED:
+                startChunkCompressing(mCurrentChunkIndex -1);
+                break;
+            case MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_APPROACHING:
+                try {
+                    File mNextFile = getOutputCameraRollFile(MEDIA_TYPE_VIDEO);
+                    mr.setNextOutputFile(mNextFile);
+
+                } catch (IOException ex) {
+                    System.out.println (ex.toString());
+
+                }
+                break;
+
         }
+
+    }
+
+    private void startChunkCompressing(int chunkIndex) {
+
     }
 
     /**
@@ -309,7 +333,8 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_CAMERA_ROLL:
                 mVideoFile = getOutputCameraRollFile(MEDIA_TYPE_VIDEO);
-                break;
+
+            break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
                 mVideoFile = getTempMediaFile(MEDIA_TYPE_VIDEO);
                 break;
@@ -318,20 +343,29 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 mVideoFile = getOutputMediaFile(MEDIA_TYPE_VIDEO);
                 break;
         }
+
+//        mNextFile =getOutputCameraRollFile(MEDIA_TYPE_VIDEO);
         if (mVideoFile == null) {
             return new RuntimeException("Error while preparing output file in prepareMediaRecorder.");
         }
-        mMediaRecorder.setOutputFile(mVideoFile.getPath());
 
-        if (options.hasKey("totalSeconds")) {
-            int totalSeconds = options.getInt("totalSeconds");
-            mMediaRecorder.setMaxDuration(totalSeconds * 1000);
-        }
 
-        if (options.hasKey("maxFileSize")) {
-            int maxFileSize = options.getInt("maxFileSize");
-            mMediaRecorder.setMaxFileSize(maxFileSize);
-        }
+        mMediaRecorder.setOutputFile(mVideoFile);
+
+
+        mMediaRecorder.setMaxFileSize(20000000);
+
+//        mMediaRecorder.setMaxDuration(2000);
+
+//        if (options.hasKey("totalSeconds")) {
+//            int totalSeconds = options.getInt("totalSeconds");
+//            mMediaRecorder.setMaxDuration(totalSeconds * 1000);
+//        }
+//
+//        if (options.hasKey("maxFileSize")) {
+//            int maxFileSize = options.getInt("maxFileSize");
+//            mMediaRecorder.setMaxFileSize(maxFileSize);
+//        }
 
         // Prepare the MediaRecorder instance with the provided configuration settings.
         try {
@@ -458,7 +492,8 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
                 _reactContext.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
                 addToMediaStore(mVideoFile.getAbsolutePath());
-                response.putString("path", Uri.fromFile(mVideoFile).toString());
+                response.putString("path",  Uri.fromFile(mVideoFile).toString());
+                response.putString("files", "[" + String.join("," , mUsedFiles + "]" ));
                 mRecordingPromise.resolve(response);
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
@@ -495,6 +530,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void capture(final ReadableMap options, final Promise promise) {
+        mCurrentChunkIndex = 0;
         if (RCTCamera.getInstance() == null) {
             promise.reject("Camera is not ready yet.");
             return;
@@ -779,11 +815,15 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         if (type == MEDIA_TYPE_IMAGE) {
             fileName = String.format("IMG_%s.jpg", fileName);
         } else if (type == MEDIA_TYPE_VIDEO) {
-            fileName = String.format("VID_%s.mp4", fileName);
+            fileName = String.format("UPLOADER_%s_%s.mp4", fileName, mCurrentChunkIndex++);
         } else {
             Log.e(TAG, "Unsupported media type:" + type);
             return null;
         }
+
+        String fileLocation = String.format("%s%s%s", storageDir.getPath(), File.separator, fileName);
+
+        mUsedFiles.add(fileLocation);
 
         return new File(String.format("%s%s%s", storageDir.getPath(), File.separator, fileName));
     }

@@ -493,7 +493,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 _reactContext.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
                 addToMediaStore(mVideoFile.getAbsolutePath());
                 response.putString("path",  Uri.fromFile(mVideoFile).toString());
-                response.putString("files", String.join("," , mUsedFiles ));
+                response.putString("files", "[" + String.join("," , mUsedFiles + "]" ));
                 mRecordingPromise.resolve(response);
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
@@ -821,11 +821,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             return null;
         }
 
-        String fileLocation = String.format("%s%s%s", storageDir.getPath(), File.separator, fileName);
+        String fileLocation = String.format("\"%s%s%s\"", storageDir.getPath(), File.separator, fileName);
 
         mUsedFiles.add(fileLocation);
 
-        return new File(String.format("'%s%s%s'", storageDir.getPath(), File.separator, fileName));
+        return new File(String.format("%s%s%s", storageDir.getPath(), File.separator, fileName));
     }
 
     private File getTempMediaFile(int type) {

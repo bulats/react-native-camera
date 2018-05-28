@@ -84,7 +84,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     private Boolean mSafeToCapture = true;
 
     private int mCurrentChunkIndex = 0;
-    private ArrayList<String> mUsedFiles = new ArrayList<>();
+    private ArrayList<String> mUsedFiles;
 //    private File mNextFile;
 
     public RCTCameraModule(ReactApplicationContext reactContext) {
@@ -352,7 +352,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         mMediaRecorder.setOutputFile(mVideoFile);
 
-
+        mMediaRecorder.setVideoEncodingBitRate(1400000);
         mMediaRecorder.setMaxFileSize(20000000);
 
 //        mMediaRecorder.setMaxDuration(2000);
@@ -446,9 +446,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         // Lock the camera so that future MediaRecorder sessions can use it by calling
         // Camera.lock(). Note this is not required on Android 4.0+ unless the
         // MediaRecorder.prepare() call fails.
-        if (mCamera != null) {
-            mCamera.lock();
-        }
+//        if (mCamera != null) {
+//            mCamera.lock();
+//        }
 
         if (mRecordingPromise == null) {
             return;
@@ -530,6 +530,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void capture(final ReadableMap options, final Promise promise) {
+        mUsedFiles = new ArrayList<>();
         mCurrentChunkIndex = 0;
         if (RCTCamera.getInstance() == null) {
             promise.reject("Camera is not ready yet.");
@@ -610,7 +611,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         if(mSafeToCapture) {
           try {
-            camera.takePicture(shutterCallback, null, captureCallback);
+            camera.takePicture(null, null, captureCallback);
             mSafeToCapture = false;
           } catch(RuntimeException ex) {
               Log.e(TAG, "Couldn't capture photo.", ex);

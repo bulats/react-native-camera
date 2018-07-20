@@ -1,8 +1,21 @@
 # React Native Camera [![Backers on Open Collective](https://opencollective.com/react-native-camera/backers/badge.svg)](#backers) [![Sponsors on Open Collective](https://opencollective.com/react-native-camera/sponsors/badge.svg)](#sponsors) [![npm version](https://badge.fury.io/js/react-native-camera.svg)](http://badge.fury.io/js/react-native-camera) [![npm downloads](https://img.shields.io/npm/dm/react-native-camera.svg)](https://www.npmjs.com/package/react-native-camera)
 
-The comprehensive camera module for React Native. Including photographs, videos, face detection, barcode scanning and text recognition (Android only)!
+The comprehensive camera module for React Native. 
 
-`import { RNCamera, FaceDetector } from 'react-native-camera';`
+Supports:
+
+- photographs.
+- videos
+- face detection
+- barcode scanning
+- text recognition (Android only)
+
+
+### Example import
+
+```jsx
+import { RNCamera, FaceDetector } from 'react-native-camera';
+```
 
 #### How to use master branch?
 Inside your package.json, use this
@@ -116,7 +129,8 @@ And add something like this to the `scripts` section in your `package.json`:
 GMV (Google Mobile Vision) is used for Face detection by the iOS RNCamera. You have to link the google frameworks to your project to successfully compile the RNCamera project.
 
 ###### CocoaPods Path
-1. Modify the dependency towards `react-native-camera` in your
+
+Modify the dependency towards `react-native-camera` in your
  `Podfile`, from
 
  ```
@@ -126,17 +140,10 @@ GMV (Google Mobile Vision) is used for Face detection by the iOS RNCamera. You h
 to
 
 ```
-pod 'react-native-camera', subspecs: ['RCT', 'RN', 'FaceDetector'], path: '../node_modules/react-native-camera'
+pod 'react-native-camera', path: '../node_modules/react-native-camera', subspecs: [
+  'FaceDetector'
+]
 ```
-
-2. Add the following to your `Podfile`: 
-```
-  pod 'GoogleMobileVision/Detector', '~> 1.1.0'
-  pod 'GoogleMobileVision/MVDataOutput', '~> 1.1.0'
-  pod 'GoogleMobileVision/FaceDetector', '~> 1.1.0'
-```
-
-3. In XCode, On your target -> Build Phases -> Link Binary with Libraries -> add AddressBook.framework
 
 ###### Non-CocoaPods Path
 1. Download:

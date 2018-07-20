@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
   },
 });
 
-type Orientation = "auto"|"landscapeLeft"|"landscapeRight"|"portrait"|"portraitUpsideDown";
+type Orientation = 'auto' | 'landscapeLeft' | 'landscapeRight' | 'portrait' | 'portraitUpsideDown';
 
 type PictureOptions = {
   quality?: number,
@@ -69,6 +69,7 @@ type RecordingOptions = {
   quality?: number | string,
   codec?: string,
   mute?: boolean,
+  path?: string
 };
 
 type EventCallbackArgumentsType = {
@@ -82,6 +83,7 @@ type PropsType = typeof View.props & {
   type?: number | string,
   onCameraReady?: Function,
   onBarCodeRead?: Function,
+  onPictureSaved?: Function,
   onGoogleVisionBarcodesDetected?: Function,
   faceDetectionMode?: number,
   flashMode?: number | string,
@@ -96,6 +98,8 @@ type PropsType = typeof View.props & {
   captureAudio?: boolean,
   useCamera2Api?: boolean,
   playSoundOnCapture?: boolean,
+  videoStabilizationMode?: number | string,
+  pictureSize?: string,
 };
 
 type StateType = {
@@ -154,6 +158,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     GoogleVisionBarcodeDetection: CameraManager.GoogleVisionBarcodeDetection,
     FaceDetection: CameraManager.FaceDetection,
     CameraStatus,
+    VideoStabilization: CameraManager.VideoStabilization,
   };
 
   // Values under keys from this object will be transformed to native options
@@ -166,6 +171,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     faceDetectionLandmarks: (CameraManager.FaceDetection || {}).Landmarks,
     faceDetectionClassifications: (CameraManager.FaceDetection || {}).Classifications,
     googleVisionBarcodeType: (CameraManager.GoogleVisionBarcodeDetection || {}).BarcodeType,
+    videoStabilizationMode: CameraManager.VideoStabilization || {},
   };
 
   static propTypes = {
@@ -176,6 +182,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
     onMountError: PropTypes.func,
     onCameraReady: PropTypes.func,
     onBarCodeRead: PropTypes.func,
+    onPictureSaved: PropTypes.func,
     onGoogleVisionBarcodesDetected: PropTypes.func,
     onFacesDetected: PropTypes.func,
     onTextRecognized: PropTypes.func,
@@ -195,6 +202,8 @@ export default class Camera extends React.Component<PropsType, StateType> {
     captureAudio: PropTypes.bool,
     useCamera2Api: PropTypes.bool,
     playSoundOnCapture: PropTypes.bool,
+    videoStabilizationMode: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    pictureSize: PropTypes.string,
   };
 
   static defaultProps: Object = {
@@ -226,6 +235,8 @@ export default class Camera extends React.Component<PropsType, StateType> {
     captureAudio: false,
     useCamera2Api: false,
     playSoundOnCapture: false,
+    pictureSize: 'None',
+    videoStabilizationMode: 0,
   };
 
   _cameraRef: ?Object;
@@ -264,6 +275,10 @@ export default class Camera extends React.Component<PropsType, StateType> {
     }
   }
 
+  getAvailablePictureSizes = async (): string[] => {
+    return await CameraManager.getAvailablePictureSizes(this.props.ratio, this._cameraHandle);
+  };
+
   async recordAsync(options?: RecordingOptions) {
     if (!options || typeof options !== 'object') {
       options = {};
@@ -277,6 +292,14 @@ export default class Camera extends React.Component<PropsType, StateType> {
     CameraManager.stopRecording(this._cameraHandle);
   }
 
+  pausePreview() {
+    CameraManager.pausePreview(this._cameraHandle);
+  }
+
+  resumePreview() {
+    CameraManager.resumePreview(this._cameraHandle);
+  }
+
   _onMountError = ({ nativeEvent }: EventCallbackArgumentsType) => {
     if (this.props.onMountError) {
       this.props.onMountError(nativeEvent);
@@ -286,6 +309,12 @@ export default class Camera extends React.Component<PropsType, StateType> {
   _onCameraReady = () => {
     if (this.props.onCameraReady) {
       this.props.onCameraReady();
+    }
+  };
+
+  _onPictureSaved = ({ nativeEvent }) => {
+    if (this.props.onPictureSaved) {
+      this.props.onPictureSaved(nativeEvent);
     }
   };
 
@@ -363,6 +392,7 @@ export default class Camera extends React.Component<PropsType, StateType> {
           onBarCodeRead={this._onObjectDetected(this.props.onBarCodeRead)}
           onFacesDetected={this._onObjectDetected(this.props.onFacesDetected)}
           onTextRecognized={this._onObjectDetected(this.props.onTextRecognized)}
+          onPictureSaved={this._onPictureSaved}
         >
           {this.renderChildren()}
         </RNCamera>
@@ -427,6 +457,7 @@ const RNCamera = requireNativeComponent('RNCamera', Camera, {
     onBarCodeRead: true,
     onGoogleVisionBarcodesDetected: true,
     onCameraReady: true,
+    onPictureSaved: true,
     onFaceDetected: true,
     onLayout: true,
     onMountError: true,

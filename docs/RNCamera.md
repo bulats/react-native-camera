@@ -250,6 +250,17 @@ By default a `Camera not authorized` message will be displayed when access to th
 
 By default a <ActivityIndicator> will be displayed while the component is waiting for the user to grant/deny access to the camera, if set displays the passed react element instead of the default one.
 
+### `iOS` `videoStabilizationMode`
+
+The video stabilization mode used for a video recording. The possible values are:
+
+   - `RNCamera.Constants.VideoStabilization['off']`
+   - `RNCamera.Constants.VideoStabilization['standard']`
+   - `RNCamera.Constants.VideoStabilization['cinematic']`
+   - `RNCamera.Constants.VideoStabilization['auto']`
+
+You can read more about each stabilization type here: https://developer.apple.com/documentation/avfoundation/avcapturevideostabilizationmode
+
 ### Native Event callbacks props
 
 #### `onCameraReady`
@@ -402,6 +413,7 @@ The promise will be fulfilled with an object with some of the following properti
  - `maxFileSize` (int greater than 0). Specifies the maximum file size, in bytes, of the video to be recorded. For 1mb, for example, use 1*1024*1024. If nothing is specified, no size limit will be used.
 
  - `mute` (any value). If this flag is given in the option with any value, the video to be recorded will be mute. If nothing is specified, video will NOT be muted.
+ - `path` (file path on disk). Specifies the path on disk to record the video to. You can use the same `uri` returned to continue recording across start/stops
 
  The promise will be fulfilled with an object with some of the following properties:
 
@@ -412,6 +424,14 @@ The promise will be fulfilled with an object with some of the following properti
  #### `stopRecording: void`
 
  Should be called after recordAsync() to make the promise be fulfilled and get the video uri.
+ 
+ #### `pausePreview: void`
+
+ Pauses the preview. The preview can be resumed again by using resumePreview().
+
+ #### `resumePreview: void`
+
+ Resumes the preview after pausePreview() has been called.
 
  #### `Android` `getSupportedRatiosAsync(): Promise`
 
@@ -419,6 +439,10 @@ The promise will be fulfilled with an object with some of the following properti
 
 ## Subviews
 This component supports subviews, so if you wish to use the camera view as a background or if you want to layout buttons/images/etc. inside the camera then you can do that.
+
+## Testing
+
+To learn about how to test components which uses `RNCamera` check its [documentation about testing](./tests.md).
 
 ## Example
 

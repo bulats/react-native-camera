@@ -128,7 +128,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
                 }
                 break;
-
+            case MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED:
+                releaseMediaRecorder();
+                break;
         }
 
     }
@@ -352,15 +354,15 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         mMediaRecorder.setOutputFile(mVideoFile);
 
-        mMediaRecorder.setVideoEncodingBitRate(1400000);
+        mMediaRecorder.setVideoEncodingBitRate(1600000);
         mMediaRecorder.setMaxFileSize(20000000);
 
 //        mMediaRecorder.setMaxDuration(2000);
 
-//        if (options.hasKey("totalSeconds")) {
-//            int totalSeconds = options.getInt("totalSeconds");
-//            mMediaRecorder.setMaxDuration(totalSeconds * 1000);
-//        }
+        if (options.hasKey("totalSeconds")) {
+            int totalSeconds = options.getInt("totalSeconds");
+            mMediaRecorder.setMaxDuration(totalSeconds * 1000);
+        }
 //
 //        if (options.hasKey("maxFileSize")) {
 //            int maxFileSize = options.getInt("maxFileSize");
@@ -797,8 +799,8 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     private File getOutputCameraRollFile(int type) {
         return getOutputFile(
                 type,
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-        );
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES//Uploader)
+        ));
     }
 
     private File getOutputFile(int type, File storageDir) {
@@ -816,7 +818,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         if (type == MEDIA_TYPE_IMAGE) {
             fileName = String.format("IMG_%s.jpg", fileName);
         } else if (type == MEDIA_TYPE_VIDEO) {
-            fileName = String.format("UPLOADER_%s_%s.mp4", fileName, mCurrentChunkIndex++);
+            fileName = String.format("Uploader_P_%s_%s.mp4", fileName, mCurrentChunkIndex++);
         } else {
             Log.e(TAG, "Unsupported media type:" + type);
             return null;
